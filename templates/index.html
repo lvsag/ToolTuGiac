@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Học Tứ Giác | Hệ Thống Tri Thức Hình Học Phổ Thông</title>
+  <meta name="description" content="Hệ thống học tập và tra cứu tri thức hình học tứ giác lớp 6–12 tích hợp đồ thị tri thức Neo4j">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+
+  <!-- Top Glass Header -->
+  <header class="header-glass">
+    <div class="container">
+      <div class="header-inner">
+        <a href="/" class="brand-area">
+          <div class="brand-logo-wrap">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6l16-2-4 14L2 14z" />
+            </svg>
+          </div>
+          <div class="brand-titles">
+            <h1>HỌC TỨ GIÁC HÌNH HỌC</h1>
+            <p>Hệ thống Tri thức Đồ thị & Công thức (Lớp 6–12)</p>
+          </div>
+        </a>
+
+        <div class="header-controls">
+          <!-- Grade Selector -->
+          <div class="grade-badge-select">
+            <label for="select-lop">
+              <svg width="15" height="15" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+              Chương trình:
+            </label>
+            <select id="select-lop"></select>
+          </div>
+
+          <!-- Neo4j / In-Memory Status Badge -->
+          <div class="db-status-badge memory" id="db-status" title="Nguồn lưu trữ tri thức hiện tại">
+            <span class="db-status-dot"></span>
+            <span id="db-status-text">Đang kiểm tra kết nối...</span>
+          </div>
+
+          <!-- Light / Dark Theme Switcher -->
+          <button class="btn-icon" id="btn-toggle-theme" title="Chuyển chế độ Sáng / Tối">
+            <span id="theme-icon"></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <div class="nav-tabs-wrapper">
+    <div class="container">
+      <div class="nav-tabs-inner">
+        <button class="nav-tab-btn active" data-tab="library">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+          Thư viện hình học
+        </button>
+
+        <button class="nav-tab-btn" data-tab="graph">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" /></svg>
+          Sơ đồ quan hệ & Phả hệ
+        </button>
+
+        <button class="nav-tab-btn" data-tab="calculator">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+          Máy tính & Công thức
+        </button>
+
+        <button class="nav-tab-btn" data-tab="transformer">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+          Khám phá Chuyển đổi hình
+        </button>
+
+        <button class="nav-tab-btn" data-tab="quiz">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+          Luyện tập trắc nghiệm
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Views Container -->
+  <main>
+    <div class="container">
+      
+      <!-- VIEW 1: THƯ VIỆN HÌNH HỌC -->
+      <section class="view-section active" id="view-library">
+        <div class="action-bar">
+          <div class="search-input-wrap">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <input type="text" id="search-shape" class="search-input" placeholder="Tìm kiếm tên hình hoặc nội dung định nghĩa...">
+          </div>
+
+          <div class="filter-chips">
+            <button class="filter-chip active" data-filter="all">Tất cả</button>
+            <button class="filter-chip" data-filter="chinh_thuc">Học chính thức</button>
+            <button class="filter-chip" data-filter="on_tap">Ôn tập</button>
+          </div>
+        </div>
+
+        <div class="shape-grid" id="shape-grid-container">
+          <!-- Dynamic shape cards generated by app.js -->
+        </div>
+      </section>
+
+      <!-- VIEW DETAIL: CHI TIẾT 1 HÌNH HỌC -->
+      <section class="view-section" id="view-detail">
+        <div id="shape-detail-container">
+          <!-- Detailed content generated by app.js -->
+        </div>
+      </section>
+
+      <!-- VIEW 2: SƠ ĐỒ QUAN HỆ & PHẢ HỆ -->
+      <section class="view-section" id="view-graph">
+        <div class="graph-container" id="graph-container-root">
+          <!-- Rendered by graph-view.js -->
+        </div>
+      </section>
+
+      <!-- VIEW 3: MÁY TÍNH HÌNH HỌC & CÔNG THỨC -->
+      <section class="view-section" id="view-calculator">
+        <div id="calc-container">
+          <!-- Rendered by calculator.js -->
+        </div>
+      </section>
+
+      <!-- VIEW 4: CHUYỂN ĐỔI HÌNH / PATH FINDER -->
+      <section class="view-section" id="view-transformer">
+        <div id="transformer-container">
+          <!-- Rendered by transformer.js -->
+        </div>
+      </section>
+
+      <!-- VIEW 5: LUYỆN TẬP TRẮC NGHIỆM -->
+      <section class="view-section" id="view-quiz">
+        <div id="quiz-container">
+          <!-- Rendered by quiz.js -->
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <p>Hệ thống Tri thức Hình học Tứ giác &bull; Tích hợp Cơ sở dữ liệu Đồ thị Neo4j &bull; Chương trình Toán THCS & THPT</p>
+    </div>
+  </footer>
+
+  <!-- Core Scripts -->
+  <script src="/static/js/geometry-draw.js"></script>
+  <script src="/static/js/graph-view.js"></script>
+  <script src="/static/js/calculator.js"></script>
+  <script src="/static/js/transformer.js"></script>
+  <script src="/static/js/quiz.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
