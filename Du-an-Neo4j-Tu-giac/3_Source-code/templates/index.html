@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Học tứ giác</title>
+<style>
+  body{font-family:Arial,sans-serif;margin:0;background:#f4f6fb;color:#222}
+  header{background:#1f3864;color:#fff;padding:12px 20px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  header h1{font-size:20px;margin:0;flex:1}
+  select,button{font-size:15px;padding:6px 10px;border-radius:6px;border:1px solid #aab}
+  nav{display:flex;gap:8px;padding:10px 20px;background:#fff;border-bottom:1px solid #dde}
+  nav button.on{background:#2f5496;color:#fff}
+  main{max-width:900px;margin:16px auto;padding:0 16px}
+  .card{background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:12px;box-shadow:0 1px 3px #0002;cursor:pointer}
+  .box{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 3px #0002}
+  h3{color:#2f5496;margin:14px 0 6px}
+  .tag{font-size:12px;padding:2px 8px;border-radius:10px;background:#e7edf9;margin-left:8px}
+  .ct{font-family:Consolas,monospace;background:#f2f2f2;padding:2px 6px;border-radius:4px}
+  .opt{display:block;width:100%;text-align:left;margin:6px 0;background:#f7f9ff}
+  .ok{background:#c6e0b4}.sai{background:#f8cbad}
+  .lvl{display:flex;gap:10px;justify-content:center;margin:10px 0;flex-wrap:wrap}
+  .lvl span{background:#e7edf9;padding:8px 12px;border-radius:8px}
+  small{color:#667}
+</style>
+</head>
+<body>
+<header>
+  <h1>Học tứ giác</h1>
+  <label>Lớp: <select id="lop"></select></label>
+  <small id="src" style="color:#cfd8ee"></small>
+</header>
+<nav>
+  <button id="t1" class="on">Thư viện hình</button>
+  <button id="t2">Sơ đồ quan hệ</button>
+  <button id="t3">Luyện tập</button>
+</nav>
+<main id="main"></main>
+<script>
+const $ = s => document.querySelector(s);
+const sel = $("#lop");
+for (let i = 6; i <= 12; i++) sel.add(new Option("Lớp " + i, i));
+sel.value = localStorage.getItem("lop") || 8;
+let tab = 1;
+const api = async p => (await fetch(p + (p.includes("?") ? "&" : "?") + "lop=" + sel.value)).json();
+const li = a => a.length ? "<ul>" + a.map(x => "<li>" + x + "</li>").join("") + "</ul>" : "<small>Chưa có nội dung ở lớp này.</small>";
+
+async function thuVien() {
+  const hs = await api("/api/hinh");
+  $("#main").innerHTML = hs.map(h => `<div class="card" onclick="chiTiet('${h.id}')"><b>${h.ten}</b>
+    <span class="tag">${h.vai_tro == "chinh_thuc" ? "Học ở lớp này" : "Ôn tập"}</span><br><small>${h.dinh_nghia}</small></div>`).join("");
+}
+async function chiTiet(id) {
+  const d = await api("/api/hinh/" + id);
+  $("#main").innerHTML = `<button onclick="thuVien()">← Quay lại</button><div class="box" style="margin-top:10px">
+    <h2 style="margin:0">${d.ten}</h2><p>${d.dinh_nghia}</p>
+    <h3>Tính chất</h3>${li(d.tinh_chat)}
+    <h3>Dấu hiệu nhận biết</h3>${li(d.dau_hieu.map(x => `Một ${x.tu.toLowerCase()} ${x.noi_dung}`))}
+    <h3>Công thức</h3>${li(d.cong_thuc.map(x => `${x.ten}: <span class="ct">${x.bieu_thuc}</span>`))}
+    <h3>Quan hệ giữa các hình</h3>
+    <p>Là trường hợp đặc biệt của: <b>${d.cha.join(", ") || "—"}</b><br>Có các trường hợp đặc biệt: <b>${d.con.join(", ") || "—"}</b></p>
+    <h3>Cần thêm điều kiện gì để thành hình khác?</h3>${li(d.goi_y.map(x => `${x.dieu_kien} → <b>${x.ket_luan}</b>`))}</div>`;
+}
+async function soDo() {
+  const {hinh, quan_he} = await api("/api/so-do");
+  if (!quan_he.length) { $("#main").innerHTML = `<div class="box">Quan hệ bao hàm giữa các hình được học từ lớp 8.</div>`; return; }
+  const ten = Object.fromEntries(hinh.map(h => [h.id, h.ten])), cha = id => quan_he.filter(e => e.con == id).map(e => e.cha);
+  const depth = id => { const p = cha(id); return p.length ? 1 + Math.max(...p.map(depth)) : 0; };
+  const levels = {}; hinh.forEach(h => (levels[depth(h.id)] ||= []).push(h.ten));
+  $("#main").innerHTML = `<div class="box"><p><small>Hình ở dưới là trường hợp đặc biệt của hình ở trên nối với nó.</small></p>` +
+    Object.keys(levels).sort().map(k => `<div class="lvl">${levels[k].map(t => `<span>${t}</span>`).join("")}</div>`).join("") +
+    `<h3>Các quan hệ</h3>` + li(quan_he.map(e => `${ten[e.con]} → là trường hợp đặc biệt của → ${ten[e.cha]}`)) + `</div>`;
+}
+let qs = [], qi = 0, diem = 0;
+async function luyenTap() { qs = await api("/api/quiz?n=5"); qi = 0; diem = 0; cau(); }
+function cau() {
+  if (qi >= qs.length) { $("#main").innerHTML = `<div class="box"><h2>Kết quả: ${diem}/${qs.length}</h2><button onclick="luyenTap()">Làm lại</button></div>`; return; }
+  const q = qs[qi];
+  $("#main").innerHTML = `<div class="box"><small>Câu ${qi + 1}/${qs.length}</small><h3>${q.cau_hoi}</h3>` +
+    q.lua_chon.map(o => `<button class="opt" data-id="${o.id}" onclick="chon(this)">${o.ten}</button>`).join("") + `<div id="kq"></div></div>`;
+}
+function chon(b) {
+  const q = qs[qi]; document.querySelectorAll(".opt").forEach(x => x.disabled = true);
+  const dung = b.dataset.id == q.dap_an; if (dung) diem++;
+  b.classList.add(dung ? "ok" : "sai");
+  document.querySelectorAll(".opt").forEach(x => { if (x.dataset.id == q.dap_an) x.classList.add("ok"); });
+  $("#kq").innerHTML = `<p>${dung ? "Chính xác!" : "Chưa đúng."}</p><button onclick="qi++;cau()">Tiếp</button>`;
+}
+function show() {
+  [1, 2, 3].forEach(i => $("#t" + i).classList.toggle("on", i == tab));
+  [thuVien, soDo, luyenTap][tab - 1]();
+}
+[1, 2, 3].forEach(i => $("#t" + i).onclick = () => { tab = i; show(); });
+sel.onchange = () => { localStorage.setItem("lop", sel.value); show(); };
+fetch("/api/info").then(r => r.json()).then(d => $("#src").textContent = "Dữ liệu: " + (d.backend == "neo4j" ? "Neo4j" : "dự phòng (chưa nối Neo4j)"));
+show();
+</script>
+</body>
+</html>
